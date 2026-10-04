@@ -8,5 +8,6 @@ window.lkstockAuth = {
     }
     return token || localStorage.getItem('lkstock_access_token');
   },
+  store: (token) => localStorage.setItem('lkstock_access_token', token),
   clear: () => localStorage.removeItem('lkstock_access_token')
 };
