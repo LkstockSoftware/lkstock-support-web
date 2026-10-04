@@ -26,16 +26,29 @@ export async function POST(request) {
       method: 'POST', headers: { authorization: `Bearer ${process.env.WHATSAPP_CLOUD_ACCESS_TOKEN}`, 'content-type': 'application/json' },
       body: JSON.stringify({ messaging_product: 'whatsapp', to: waId, type: 'text', text: { preview_url: false, body: text } }),
     });
-    if (!meta.ok) return json(502, { error: 'whatsapp_message_not_accepted' });
+    if (!meta.ok) {
+      const failure = await meta.json().catch(() => ({}));
+      const error = failure?.error || {};
+      return json(502, { error: 'whatsapp_message_not_accepted', metaCode: error.code || null, metaSubcode: error.error_subcode || null });
+    }
     const provider = await meta.json();
     const wamid = provider.messages?.[0]?.id;
     if (!wamid) return json(502, { error: 'whatsapp_message_id_missing' });
+    const outbound = {
+      provider_message_id: wamid,
+      conversation_id: conversationId,
+      direction: 'outbound',
+      message_type: 'text',
+      body: text,
+      delivery_status: 'sent',
+      raw_event: { source: 'operator_portal', operator_name: auth.user.email },
+    };
     await supabase('wa_messages?on_conflict=provider_message_id', {
-      method: 'POST', headers: { Prefer: 'resolution=ignore-duplicates,return=minimal' },
-      body: JSON.stringify({ provider_message_id: wamid, conversation_id: conversationId, direction: 'outbound', message_type: 'text', body: text, delivery_status: 'sent', raw_event: { source: 'operator_portal', operator_name: auth.user.email } }),
+      method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=representation' },
+      body: JSON.stringify(outbound),
     });
     await supabase(`wa_messages?provider_message_id=eq.${encodeURIComponent(wamid)}`, {
-      method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ body: text }),
+      method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ body: text, message_type: 'text', raw_event: outbound.raw_event }),
     });
     const notionTicketsUpdated = await syncNotionTicket(conversationId, 'takeover');
     return json(200, { ok: true, delivery_status: 'sent', notionTicketsUpdated });
