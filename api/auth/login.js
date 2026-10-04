@@ -29,5 +29,5 @@ export async function POST(request) {
   if (!response.ok) return json(401, { error: 'invalid_credentials' });
   const session = await response.json();
   if (!session?.access_token) return json(401, { error: 'invalid_credentials' });
-  return json(200, { access_token: session.access_token });
+  return json(200, { accessToken: session.access_token });
 }
