@@ -46,7 +46,7 @@ else
             {
                 <header class="chat-header"><div><p class="eyebrow">@CompanyLabel(selected)</p><h2>@DisplayName(selected)</h2><span>+@selected.WaId · Estado: <b>@StatusLabel(selected.Status)</b></span></div><div class="actions"><button @onclick="TogglePin" disabled="@busy">@(selected.Pinned ? "Quitar fijado" : "Fijar arriba")</button><button @onclick="OpenProfileDialog">Editar ficha</button><button @onclick="Takeover" disabled="@(busy || selected.Status == "manual")">Tomar</button><button @onclick="ReturnToBot" disabled="@(busy || selected.Status == "bot")">Devolver al bot</button><button class="danger" @onclick="Close" disabled="@busy">Cerrar</button></div></header>
                 <div class="messages">@foreach (var item in messages) { <article class="bubble @item.Direction"><p>@item.Body</p><small>@item.CreatedAt.LocalDateTime.ToString("dd/MM HH:mm") @Delivery(item)</small></article> } @if (!messages.Any()) { <p class="empty">Sin mensajes registrados.</p> }</div>
-                <footer class="reply-box"><textarea @bind="replyText" placeholder="Escribí una respuesta para el cliente..." disabled="@busy"></textarea><button class="primary" @onclick="Reply" disabled="@(busy || string.IsNullOrWhiteSpace(replyText))">Enviar</button></footer>
+                <footer class="reply-box"><textarea @bind="replyText" @bind:event="oninput" placeholder="Escribí una respuesta para el cliente..." disabled="@busy"></textarea><button class="primary" @onclick="Reply" disabled="@(busy || string.IsNullOrWhiteSpace(replyText))">Enviar</button></footer>
             }
             @if (!string.IsNullOrWhiteSpace(message)) { <div class="toast">@message</div> }
         </section>
