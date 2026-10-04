@@ -18,6 +18,7 @@ export async function POST(request) {
     headers: { apikey: process.env.SUPABASE_SECRET_KEY, 'content-type': 'application/json' },
     body: JSON.stringify({ email, create_user: false, email_redirect_to: redirectTo }),
   });
+  if (response.status === 429) return json(429, { error: 'email_rate_limited' });
   if (!response.ok) return json(502, { error: 'magic_link_not_sent' });
   return json(200, { sent: true });
 }
