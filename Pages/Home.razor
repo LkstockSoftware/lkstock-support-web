@@ -1,7 +1,36 @@
 ﻿@page "/"
+@using System.Net.Http.Headers
+@using System.Net.Http.Json
+@using System.Text.Json
+@inject HttpClient Http
+@inject IJSRuntime JS
 
-<PageTitle>Home</PageTitle>
+<PageTitle>LkStock Soporte</PageTitle>
 
-<h1>Hello, world!</h1>
+@if (!authenticated)
+{
+    <main class="login-shell"><section class="login-card"><div class="brand-mark">LK</div><p class="eyebrow">LkStock · Atención oficial</p><h1>Centro de soporte</h1><p class="muted">Ingresá con el enlace seguro enviado a tu correo autorizado.</p><label for="email">Correo del operador</label><input id="email" @bind="email" type="email" autocomplete="email" /><button class="primary" @onclick="SendLink" disabled="@sending">@(sending ? "Enviando..." : "Enviar enlace de acceso")</button>@if (!string.IsNullOrWhiteSpace(message)) { <p class="notice">@message</p> }</section></main>
+}
+else
+{
+    <main class="support-shell"><aside class="conversation-panel"><header class="panel-header"><div><p class="eyebrow">LkStock Soporte</p><h1>Conversaciones</h1></div><button class="icon-button" title="Actualizar" @onclick="LoadConversations">↻</button></header><div class="operator">@operatorEmail <button @onclick="Logout">Salir</button></div><div class="conversation-list">@foreach (var item in conversations) { <button class="conversation @(selected?.Id == item.Id ? "selected" : "")" @onclick="() => SelectConversation(item)"><span class="avatar">@Initials(item)</span><span class="conversation-text"><strong>@DisplayName(item)</strong><small>@StatusLabel(item.Status)</small></span><span class="status-dot @item.Status"></span></button> } @if (!conversations.Any()) { <p class="empty">No hay conversaciones disponibles.</p> }</div></aside>
+    <section class="chat-panel">@if (selected is null) { <div class="empty-chat"><div class="brand-mark">LK</div><h2>Seleccioná una conversación</h2><p>El historial y los controles de atención aparecerán aquí.</p></div> } else { <header class="chat-header"><div><h2>@DisplayName(selected)</h2><span>Estado: <b>@StatusLabel(selected.Status)</b></span></div><div class="actions"><button @onclick="Takeover" disabled="@(busy || selected.Status == "manual")">Tomar</button><button @onclick="ReturnToBot" disabled="@(busy || selected.Status == "bot")">Devolver al bot</button><button class="danger" @onclick="Close" disabled="@busy">Cerrar</button></div></header><div class="messages">@foreach (var item in messages) { <article class="bubble @item.Direction"><p>@item.Body</p><small>@item.CreatedAt.LocalDateTime.ToString("dd/MM HH:mm") @Delivery(item)</small></article> } @if (!messages.Any()) { <p class="empty">Sin mensajes registrados.</p> }</div><footer class="reply-box"><textarea @bind="replyText" placeholder="Escribí una respuesta para el cliente..." disabled="@busy"></textarea><button class="primary" @onclick="Reply" disabled="@(busy || string.IsNullOrWhiteSpace(replyText))">Enviar</button></footer> } @if (!string.IsNullOrWhiteSpace(message)) { <div class="toast">@message</div> }</section></main>
+}
 
-Welcome to your new app.
+@code {
+    private readonly JsonSerializerOptions json = new() { PropertyNameCaseInsensitive = true };
+    private string? token; private string email = "lkstocksoftware@gmail.com"; private string operatorEmail = ""; private string message = ""; private string replyText = ""; private bool authenticated; private bool sending; private bool busy;
+    private List<Conversation> conversations = []; private List<SupportMessage> messages = []; private Conversation? selected;
+    protected override async Task OnAfterRenderAsync(bool firstRender) { if (!firstRender) return; token = await JS.InvokeAsync<string?>("lkstockAuth.captureFromUrl"); if (!string.IsNullOrWhiteSpace(token)) await LoadSession(); StateHasChanged(); }
+    private async Task SendLink() { sending = true; message = ""; var response = await Http.PostAsJsonAsync("api/auth/request", new { email }); message = response.IsSuccessStatusCode ? "Revisá tu correo para abrir el enlace de acceso." : "No fue posible enviar el enlace. Verificá el correo autorizado."; sending = false; }
+    private async Task LoadSession() { var response = await Authorized(HttpMethod.Get, "api/session"); if (!response.IsSuccessStatusCode) { await Logout(); return; } var data = await response.Content.ReadFromJsonAsync<SessionInfo>(json); authenticated = data is not null; operatorEmail = data?.Email ?? ""; if (authenticated) await LoadConversations(); }
+    private async Task LoadConversations() { var response = await Authorized(HttpMethod.Get, "api/conversations"); if (!response.IsSuccessStatusCode) { message = "No se pudieron cargar las conversaciones."; return; } conversations = (await response.Content.ReadFromJsonAsync<ConversationResponse>(json))?.Conversations ?? []; }
+    private async Task SelectConversation(Conversation item) { selected = item; replyText = ""; messages = []; var response = await Authorized(HttpMethod.Get, $"api/messages?conversationId={Uri.EscapeDataString(item.Id)}"); messages = (await response.Content.ReadFromJsonAsync<MessageResponse>(json))?.Messages ?? []; }
+    private async Task Takeover() => await Action("takeover"); private async Task ReturnToBot() => await Action("return_to_bot"); private async Task Close() => await Action("close");
+    private async Task Action(string action) { if (selected is null) return; busy = true; var response = await Authorized(HttpMethod.Post, "api/actions", new { action, conversationId = selected.Id }); message = response.IsSuccessStatusCode ? "Estado actualizado y sincronizado con Notion." : "No se pudo actualizar el caso."; busy = false; await LoadConversations(); selected = conversations.FirstOrDefault(x => x.Id == selected.Id); }
+    private async Task Reply() { if (selected is null) return; busy = true; var response = await Authorized(HttpMethod.Post, "api/reply", new { conversationId = selected.Id, text = replyText }); message = response.IsSuccessStatusCode ? "Mensaje enviado desde el número oficial de LkStock." : "No se pudo enviar el mensaje."; if (response.IsSuccessStatusCode) { replyText = ""; await SelectConversation(selected); await LoadConversations(); } busy = false; }
+    private async Task<HttpResponseMessage> Authorized(HttpMethod method, string url, object? body = null) { var request = new HttpRequestMessage(method, url); request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token); if (body is not null) request.Content = JsonContent.Create(body); return await Http.SendAsync(request); }
+    private async Task Logout() { authenticated = false; token = null; conversations = []; messages = []; selected = null; await JS.InvokeVoidAsync("lkstockAuth.clear"); }
+    private static string DisplayName(Conversation item) => string.IsNullOrWhiteSpace(item.DisplayName) ? $"+{item.WaId}" : item.DisplayName; private static string Initials(Conversation item) => DisplayName(item)[..1].ToUpperInvariant(); private static string StatusLabel(string status) => status switch { "manual" => "En atención", "closed" => "Cerrado", _ => "Bot activo" }; private static string Delivery(SupportMessage item) => item.Direction == "outbound" && !string.IsNullOrWhiteSpace(item.DeliveryStatus) ? "· " + item.DeliveryStatus : "";
+    private sealed class SessionInfo { public string Email { get; set; } = ""; } private sealed class ConversationResponse { public List<Conversation> Conversations { get; set; } = []; } private sealed class MessageResponse { public List<SupportMessage> Messages { get; set; } = []; } private sealed class Conversation { public string Id { get; set; } = ""; public string WaId { get; set; } = ""; public string? DisplayName { get; set; } public string Status { get; set; } = "bot"; } private sealed class SupportMessage { public string Direction { get; set; } = "inbound"; public string? Body { get; set; } public string? DeliveryStatus { get; set; } public DateTimeOffset CreatedAt { get; set; } }
+}
