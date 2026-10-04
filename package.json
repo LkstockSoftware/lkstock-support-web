@@ -1,0 +1,8 @@
+{
+  "name": "lkstock-support-web",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test:api": "node --test api/*.test.mjs"
+  }
+}
