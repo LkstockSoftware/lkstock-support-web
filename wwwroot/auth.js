@@ -11,3 +11,17 @@ window.lkstockAuth = {
   store: (token) => localStorage.setItem('lkstock_access_token', token),
   clear: () => localStorage.removeItem('lkstock_access_token')
 };
+
+window.lkstockUi = {
+  success: (title, text) => Swal.fire({ icon: 'success', title, text, confirmButtonText: 'Entendido', confirmButtonColor: '#1676ac' }),
+  error: (title, text) => Swal.fire({ icon: 'error', title, text, confirmButtonText: 'Entendido', confirmButtonColor: '#b84f59' }),
+  confirm: async (title, text, confirmButtonText = 'Sí, continuar') => {
+    const result = await Swal.fire({
+      icon: 'question', title, text, showCancelButton: true,
+      confirmButtonText, cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#1676ac', cancelButtonColor: '#6d7c89',
+      reverseButtons: true, focusCancel: true
+    });
+    return result.isConfirmed;
+  }
+};
