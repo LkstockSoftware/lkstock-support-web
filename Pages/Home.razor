@@ -22,7 +22,7 @@
 }
 else
 {
-    <main class="support-shell">
+    <main class="support-shell @(selected is null ? "no-selection" : "conversation-selected")">
         <aside class="conversation-panel">
             <header class="panel-header"><div><p class="eyebrow">LkStock Soporte</p><h1>Conversaciones</h1></div><button class="icon-button" title="Actualizar conversaciones" @onclick="LoadConversations" disabled="@conversationsLoading">@if (conversationsLoading) { <span class="button-spinner"></span> } else { <span>↻</span> }</button></header>
             <div class="operator"><span>@operatorEmail</span><div class="operator-actions"><button @onclick="Logout">Salir</button></div></div>
