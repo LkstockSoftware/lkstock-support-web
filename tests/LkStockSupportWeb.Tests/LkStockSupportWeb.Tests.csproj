@@ -6,7 +6,8 @@
     <IsPackable>false</IsPackable>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="../../LkStockSupportWeb.csproj" />
+    <ProjectReference Include="../../LkStockSupport.Domain/LkStockSupport.Domain.csproj" />
+    <ProjectReference Include="../../LkStockSupport.Infrastructure/LkStockSupport.Infrastructure.csproj" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
     <PackageReference Include="xunit" Version="2.9.3" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" PrivateAssets="all" />

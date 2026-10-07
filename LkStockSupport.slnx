@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/tests/">
+    <Project Path="tests/LkStockSupportWeb.Tests/LkStockSupportWeb.Tests.csproj" />
+  </Folder>
+  <Project Path="LkStockSupport.Domain/LkStockSupport.Domain.csproj" />
+  <Project Path="LkStockSupport.Infrastructure/LkStockSupport.Infrastructure.csproj" />
+  <Project Path="LkStockSupportWeb.csproj" />
+</Solution>

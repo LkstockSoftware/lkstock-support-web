@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace LkStockSupportWeb.Models;
+namespace LkStockSupport.Domain.Models;
 
 public sealed class LoginResponse
 {
@@ -30,22 +30,16 @@ public sealed class Conversation
 {
     [JsonPropertyName("id")]
     public string Id { get; set; } = "";
-
     [JsonPropertyName("wa_id")]
     public string WaId { get; set; } = "";
-
     [JsonPropertyName("display_name")]
     public string? DisplayName { get; set; }
-
     [JsonPropertyName("company_id")]
     public string? CompanyId { get; set; }
-
     [JsonPropertyName("company_name")]
     public string? CompanyName { get; set; }
-
     [JsonPropertyName("pinned")]
     public bool Pinned { get; set; }
-
     [JsonPropertyName("status")]
     public string Status { get; set; } = "bot";
 }
@@ -54,13 +48,10 @@ public sealed class SupportMessage
 {
     [JsonPropertyName("direction")]
     public string Direction { get; set; } = "inbound";
-
     [JsonPropertyName("body")]
     public string? Body { get; set; }
-
     [JsonPropertyName("delivery_status")]
     public string? DeliveryStatus { get; set; }
-
     [JsonPropertyName("created_at")]
     public DateTimeOffset CreatedAt { get; set; }
 }

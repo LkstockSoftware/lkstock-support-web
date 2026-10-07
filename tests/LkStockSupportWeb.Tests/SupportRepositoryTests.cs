@@ -2,8 +2,8 @@ using Xunit;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
-using LkStockSupportWeb.Models;
-using LkStockSupportWeb.Repositories;
+using LkStockSupport.Domain.Models;
+using LkStockSupport.Infrastructure.Repositories;
 
 namespace LkStockSupportWeb.Tests;
 

@@ -18,7 +18,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Remove="tests/**/*.cs" />
+    <ProjectReference Include="LkStockSupport.Domain/LkStockSupport.Domain.csproj" />
+    <ProjectReference Include="LkStockSupport.Infrastructure/LkStockSupport.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="tests/**/*.cs;Models/**/*.cs;Repositories/**/*.cs;LkStockSupport.Domain/**/*.cs;LkStockSupport.Infrastructure/**/*.cs" />
   </ItemGroup>
 
 </Project>
