@@ -12,6 +12,7 @@
         <section class="login-card">
             <div class="login-brand"><div class="brand-mark">LK</div><div><p class="eyebrow">LkStock · Atención oficial</p><h1>Centro de soporte</h1></div></div>
             <p class="muted">Acceso privado para el operador autorizado.</p>
+            <small class="app-version">@versionLabel</small>
             <label for="email">Correo electrónico</label>
             <input id="email" @bind="email" type="email" autocomplete="email" inputmode="email" />
             <label for="password">Contraseña</label>
@@ -43,7 +44,7 @@ else
             }
             else
             {
-                <header class="chat-header"><div><p class="eyebrow">@CompanyLabel(selected)</p><h2>@DisplayName(selected)</h2><span>+@selected.WaId · Estado: <b>@StatusLabel(selected.Status)</b></span></div><div class="actions"><button @onclick="TogglePin" disabled="@busy">@(selected.Pinned ? "Quitar fijado" : "Fijar arriba")</button><button @onclick="OpenProfileDialog" disabled="@busy">Editar ficha</button><button @onclick="Takeover" disabled="@(busy || selected.Status == "manual")">Tomar</button><button @onclick="ReturnToBot" disabled="@(busy || selected.Status == "bot")">Devolver al bot</button><button class="danger" @onclick="Close" disabled="@busy">Cerrar</button></div></header>
+                <header class="chat-header"><div><p class="eyebrow">@CompanyLabel(selected)</p><h2>@DisplayName(selected)</h2><span>+@selected.WaId · Estado: <b>@StatusLabel(selected.Status)</b> · @versionLabel</span></div><div class="actions"><button @onclick="TogglePin" disabled="@busy">@(selected.Pinned ? "Quitar fijado" : "Fijar arriba")</button><button @onclick="OpenProfileDialog" disabled="@busy">Editar ficha</button><button @onclick="Takeover" disabled="@(busy || selected.Status == "manual")">Tomar</button><button @onclick="ReturnToBot" disabled="@(busy || selected.Status == "bot")">Devolver al bot</button><button class="danger" @onclick="Close" disabled="@busy">Cerrar</button></div></header>
                 <div class="messages">
                     @if (loadingMessages) { <div class="message-activity"><span class="spinner"></span><span>Cargando historial...</span></div> }
                     else
@@ -67,11 +68,11 @@ else
 }
 
 @code {
-    private string? token; private string email = "lkstocksoftware@gmail.com"; private string password = ""; private string operatorEmail = ""; private string replyText = ""; private string search = ""; private string profileDisplayName = ""; private string profileCompanyId = ""; private string profileCompanyName = ""; private string busyText = "";
+    private string? token; private string email = "lkstocksoftware@gmail.com"; private string password = ""; private string operatorEmail = ""; private string replyText = ""; private string search = ""; private string profileDisplayName = ""; private string profileCompanyId = ""; private string profileCompanyName = ""; private string busyText = ""; private string versionLabel = "Versión verificando...";
     private bool authenticated; private bool sending; private bool busy; private bool showProfileDialog; private bool savingProfile; private bool conversationsLoading; private bool loadingMessages;
     private List<Conversation> conversations = []; private List<SupportMessage> messages = []; private Conversation? selected;
 
-    protected override async Task OnAfterRenderAsync(bool firstRender) { if (!firstRender) return; token = await JS.InvokeAsync<string?>("lkstockAuth.captureFromUrl"); if (!string.IsNullOrWhiteSpace(token)) await LoadSession(); StateHasChanged(); }
+    protected override async Task OnAfterRenderAsync(bool firstRender) { if (!firstRender) return; var build = await JS.InvokeAsync<BuildInfo?>("lkstockUi.getBuildInfo"); versionLabel = build is null ? "Versión no disponible" : $"v{build.Version} · {build.Commit}"; token = await JS.InvokeAsync<string?>("lkstockAuth.captureFromUrl"); if (!string.IsNullOrWhiteSpace(token)) await LoadSession(); StateHasChanged(); }
     private async Task LoginKeyDown(KeyboardEventArgs args) { if (args.Key == "Enter") await Login(); }
     private async Task Login() { sending = true; try { var data = await Repository.LoginAsync(email, password); token = data?.AccessToken; if (!string.IsNullOrWhiteSpace(token)) { await JS.InvokeVoidAsync("lkstockAuth.store", token); password = ""; await LoadSession(); } else await Error("No se pudo ingresar", "Revisá el correo y la contraseña."); } catch { await Error("No se pudo ingresar", "Verificá tu conexión e intentá de nuevo."); } finally { sending = false; } }
     private async Task SearchKeyDown(KeyboardEventArgs args) { if (args.Key == "Enter") await LoadConversations(); }
@@ -96,5 +97,6 @@ else
     private static string Initials(Conversation item) => DisplayName(item)[..1].ToUpperInvariant();
     private static string CompanyLabel(Conversation item) => !string.IsNullOrWhiteSpace(item.CompanyName) ? $"{item.CompanyName}{(string.IsNullOrWhiteSpace(item.CompanyId) ? "" : $" · ID {item.CompanyId}")}" : (string.IsNullOrWhiteSpace(item.CompanyId) ? StatusLabel(item.Status) : $"ID {item.CompanyId} · {StatusLabel(item.Status)}");
     private static string StatusLabel(string status) => status switch { "manual" => "En atención", "closed" => "Cerrado", _ => "Bot activo" };
+    private sealed class BuildInfo { public string Version { get; set; } = "?"; public string Commit { get; set; } = "?"; }
     private static string Delivery(SupportMessage item) => item.Direction == "outbound" && !string.IsNullOrWhiteSpace(item.DeliveryStatus) ? "· " + item.DeliveryStatus : "";
 }

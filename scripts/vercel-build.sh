@@ -16,4 +16,7 @@ export DOTNET_CLI_TELEMETRY_OPTOUT=1
 
 rm -rf publish
 "$DOTNET" publish LkStockSupportWeb.csproj -c Release -o publish
+VERSION="$(date -u +%Y.%m.%d.%H%M)"
+COMMIT="$(git rev-parse --short HEAD 2>/dev/null || printf 'local')"
+printf '{"version":"%s","commit":"%s","builtAt":"%s"}\n' "$VERSION" "$COMMIT" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > publish/wwwroot/build-info.json
 cp vercel.json publish/wwwroot/vercel.json

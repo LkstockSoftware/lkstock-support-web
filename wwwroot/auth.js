@@ -13,6 +13,12 @@ window.lkstockAuth = {
 };
 
 window.lkstockUi = {
+  getBuildInfo: async () => {
+    try {
+      const response = await fetch(`/build-info.json?t=${Date.now()}`, { cache: 'no-store' });
+      return response.ok ? await response.json() : null;
+    } catch { return null; }
+  },
   success: (title, text) => Swal.fire({ icon: 'success', title, text, confirmButtonText: 'Entendido', confirmButtonColor: '#1676ac' }),
   error: (title, text) => Swal.fire({ icon: 'error', title, text, confirmButtonText: 'Entendido', confirmButtonColor: '#b84f59' }),
   confirm: async (title, text, confirmButtonText = 'Sí, continuar') => {
